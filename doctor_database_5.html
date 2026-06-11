@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>当直医師データベース</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f8f6; --surface: #ffffff;
+    --border: rgba(0,0,0,0.10); --border-strong: rgba(0,0,0,0.18);
+    --text: #1a1a1a; --text-sub: #666; --text-hint: #999;
+    --accent: #2c5f8a; --accent-light: #e6f1fb; --accent-text: #185FA5;
+    --female-bg: #fbeaf0; --female-text: #993556;
+    --badge-bg: #eaf3de; --badge-text: #3b6d11;
+    --chip-active-bg: #eeedfe; --chip-active-border: #afa9ec; --chip-active-text: #3c3489;
+    --radius: 12px; --radius-sm: 8px; --radius-pill: 20px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110; --surface: #1e1e1c;
+      --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.18);
+      --text: #f0ede8; --text-sub: #aaa; --text-hint: #666;
+      --accent: #5ba3d8; --accent-light: #0c2d47; --accent-text: #85b7eb;
+      --female-bg: #2a1520; --female-text: #ed93b1;
+      --badge-bg: #173404; --badge-text: #c0dd97;
+      --chip-active-bg: #26215c; --chip-active-border: #534ab7; --chip-active-text: #ceccf6;
+    }
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    min-height: 100vh; padding: 0 0 40px;
+  }
+  header {
+    background: var(--surface); border-bottom: 0.5px solid var(--border);
+    padding: 16px 16px 0; position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .header-icon {
+    width: 36px; height: 36px; background: var(--accent-light);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .header-title { font-size: 17px; font-weight: 600; color: var(--text); }
+  .search-wrap { position: relative; margin-bottom: 12px; }
+  .search-icon {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    color: var(--text-hint); font-size: 18px; pointer-events: none;
+  }
+  .search-input {
+    width: 100%; padding: 11px 36px; font-size: 15px;
+    border-radius: var(--radius-sm); border: 0.5px solid var(--border-strong);
+    background: var(--bg); color: var(--text); outline: none; -webkit-appearance: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .clear-btn {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--text-hint);
+    font-size: 18px; cursor: pointer; padding: 2px; display: none; line-height: 1;
+  }
+  .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .chip {
+    padding: 6px 14px; font-size: 13px; border-radius: var(--radius-pill);
+    border: 0.5px solid var(--border-strong); background: var(--bg); color: var(--text-sub);
+    cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  .chip.active {
+    background: var(--chip-active-bg); border-color: var(--chip-active-border);
+    color: var(--chip-active-text); font-weight: 500;
+  }
+  .main { padding: 14px 16px; }
+  .count-bar { font-size: 12px; color: var(--text-hint); margin-bottom: 10px; }
+  .loading { text-align: center; padding: 48px 24px; color: var(--text-hint); font-size: 14px; }
+  .doctor-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+  }
+  .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 14px; flex-shrink: 0;
+  }
+  .av-m { background: var(--accent-light); color: var(--accent-text); }
+  .av-f { background: var(--female-bg); color: var(--female-text); }
+  .card-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .card-kana { font-size: 11px; color: var(--text-hint); margin-top: 1px; letter-spacing: 0.02em; }
+  .card-dept { font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+  .card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field-full { grid-column: 1 / -1; }
+  .field-label { font-size: 11px; color: var(--text-hint); margin-bottom: 2px; font-weight: 500; letter-spacing: 0.03em; }
+  .field-value { font-size: 13px; color: var(--text); }
+  .badge {
+    display: inline-block; background: var(--badge-bg); color: var(--badge-text);
+    font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: var(--radius-pill);
+  }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-hint); }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; display: block; }
+  .empty-text { font-size: 14px; }
+  @media (min-width: 480px) { header, .main { max-width: 480px; margin: 0 auto; } }
+  .pw-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pw-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    width: 300px;
+    text-align: center;
+  }
+  .pw-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+  .pw-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .pw-sub { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
+  .pw-input {
+    width: 100%; padding: 11px 14px; font-size: 18px; letter-spacing: 0.2em;
+    border-radius: var(--radius-sm); border: 0.5px solid var(--border-strong);
+    background: var(--bg); color: var(--text); outline: none;
+    text-align: center; margin-bottom: 12px; -webkit-appearance: none;
+  }
+  .pw-input:focus { border-color: var(--accent); }
+  .pw-btn {
+    width: 100%; padding: 12px; font-size: 15px; font-weight: 600;
+    border-radius: var(--radius-sm); border: none;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  .pw-btn:active { opacity: 0.85; }
+  .pw-error { font-size: 13px; color: #c0392b; margin-top: 10px; min-height: 18px; }
+
+</style>
+</head>
+<body>
+
+<div class="pw-overlay" id="pwOverlay">
+  <div class="pw-box">
+    <span class="pw-icon">🔒</span>
+    <div class="pw-title">当直医師データベース</div>
+    <div class="pw-sub">パスワードを入力してください</div>
+    <input class="pw-input" id="pwInput" type="password" maxlength="10"
+      placeholder="••••••"
+      oninput="if(this.value.length>=4) checkPw()"
+      onkeydown="if(event.key==='Enter') checkPw()" />
+    <button class="pw-btn" onclick="checkPw()">ログイン</button>
+    <div class="pw-error" id="pwError"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-top">
+    <div class="header-icon">🩺</div>
+    <div><div class="header-title">当直医師データベース</div></div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="searchInput" type="search"
+      placeholder="氏名・ふりがな・所属・専門科目で検索..."
+      oninput="onSearch(this)" autocomplete="off" />
+    <button class="clear-btn" id="clearBtn" onclick="clearSearch()" aria-label="検索をクリア">✕</button>
+  </div>
+  <div class="filter-row">
+    <div class="chip active" onclick="setFilter('all',this)">すべて</div>
+    <div class="chip" onclick="setFilter('男',this)">男性</div>
+    <div class="chip" onclick="setFilter('女',this)">女性</div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="count-bar" id="countBar"></div>
+  <div id="listArea"><div class="loading">読み込み中...</div></div>
+</div>
+
+<script>
+
+const CORRECT_PW = '5629';
+
+function checkPw() {
+  var val = document.getElementById('pwInput').value;
+  if (val === CORRECT_PW) {
+    document.getElementById('pwOverlay').style.display = 'none';
+    sessionStorage.setItem('auth', '1');
+    init();
+  } else if (val.length >= 4) {
+    document.getElementById('pwError').textContent = 'パスワードが違います';
+    document.getElementById('pwInput').value = '';
+  }
+}
+
+// セッション中は再入力不要
+if (sessionStorage.getItem('auth') === '1') {
+  document.getElementById('pwOverlay').style.display = 'none';
+  document.addEventListener('DOMContentLoaded', init);
+}
+
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJWwMfObSjE5qfV4BycGmGTpI5KVVHd8pfbBvmWUL2QXJBZQmsay9Q-HPJcdCH3Zbf/exec';
+
+let allData = [];
+let activeFilter = 'all';
+let searchQuery = '';
+
+function toHiragana(str) {
+  return (str || '').replace(/[\u30A1-\u30F6]/g, function(c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0x60);
+  });
+}
+
+function searchText(d) {
+  return [d['名前'], d['ふりがな'], d['所属'], d['専門科目'], d['性別'], d['生年月日']]
+    .map(function(v) { return toHiragana(v || '').toLowerCase(); }).join(' ');
+}
+
+function initials(name) {
+  return (name || '').replace(/\s/g, '').slice(0, 2) || '?';
+}
+
+// 生年月日の表示用フォーマット変換
+// ISO形式（1984-10-10T15:00:00.000Z）、シリアル値、テキストに対応
+function formatDate(val) {
+  if (!val) return '—';
+  var s = String(val).trim();
+  // ISO形式
+  if (s.length >= 10 && s.charAt(4) === '-' && s.charAt(7) === '-') {
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      var y = d.getUTCFullYear();
+      var m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      var day = String(d.getUTCDate()).padStart(2, '0');
+      return y + '/' + m + '/' + day;
+    }
+  }
+  // 5桁シリアル値
+  if (/^\d{5}$/.test(s)) {
+    var d2 = new Date(Math.round((parseFloat(s) - 25569) * 86400 * 1000));
+    return d2.getUTCFullYear() + '/' +
+      String(d2.getUTCMonth() + 1).padStart(2, '0') + '/' +
+      String(d2.getUTCDate()).padStart(2, '0');
+  }
+  return s;
+}
+
+function calcAge(dobFormatted) {
+  if (!dobFormatted || dobFormatted === '—') return '—';
+  var s = dobFormatted.replace(/\./g, '/');
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return '—';
+  var now = new Date();
+  var age = now.getFullYear() - d.getFullYear();
+  if (now.getMonth() < d.getMonth() ||
+     (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--;
+  return age + '歳';
+}
+
+function highlight(text, q) {
+  if (!q || !text) return text || '—';
+  var escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text).replace(new RegExp('(' + escaped + ')', 'gi'),
+    '<mark style="background:rgba(44,95,138,0.18);color:inherit;border-radius:2px">$1</mark>');
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+  el.classList.add('active');
+  render();
+}
+
+function onSearch(el) {
+  searchQuery = el.value;
+  document.getElementById('clearBtn').style.display = searchQuery ? 'block' : 'none';
+  render();
+}
+
+function clearSearch() {
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').style.display = 'none';
+  render();
+}
+
+function render() {
+  var q = toHiragana(searchQuery.trim().toLowerCase());
+  var filtered = allData.filter(function(d) {
+    var genderMatch = activeFilter === 'all' || String(d['性別']) === activeFilter;
+    var textMatch = !q || searchText(d).includes(q);
+    return genderMatch && textMatch;
+  });
+
+  document.getElementById('countBar').textContent =
+    (searchQuery || activeFilter !== 'all') ? filtered.length + ' 件該当' : allData.length + ' 件';
+
+  var area = document.getElementById('listArea');
+
+  if (filtered.length === 0) {
+    area.innerHTML = '<div class="empty-state"><span class="empty-icon">🔍</span><div class="empty-text">「' + searchQuery + '」に該当する医師が見つかりません</div></div>';
+    return;
+  }
+
+  area.innerHTML = filtered.map(function(d) {
+    var avClass = String(d['性別']) === '女' ? 'av-f' : 'av-m';
+    var rawQ = searchQuery.trim();
+    var name = highlight(d['名前'], rawQ);
+    var kana = d['ふりがな'] ? '<div class="card-kana">' + highlight(d['ふりがな'], rawQ) + '</div>' : '';
+    var dept = highlight(d['所属'], rawQ);
+    var spec = highlight(d['専門科目'], rawQ);
+    var dob = formatDate(d['生年月日']);
+    var age = calcAge(dob);
+    return '<div class="doctor-card">' +
+      '<div class="card-top">' +
+        '<div class="avatar ' + avClass + '">' + initials(d['名前']) + '</div>' +
+        '<div>' +
+          '<div class="card-name">' + name + '</div>' +
+          kana +
+          '<div class="card-dept">' + dept + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card-fields">' +
+        '<div><div class="field-label">生年月日</div><div class="field-value">' + dob + '</div></div>' +
+        '<div><div class="field-label">年齢</div><div class="field-value">' + age + '</div></div>' +
+        '<div><div class="field-label">性別</div><div class="field-value">' + (d['性別'] || '—') + '</div></div>' +
+        '<div class="field-full"><div class="field-label">専門科目</div><div class="field-value"><span class="badge">' + spec + '</span></div></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function init() {
+  try {
+    var res = await fetch(GAS_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allData = await res.json();
+    render();
+  } catch(e) {
+    document.getElementById('listArea').innerHTML =
+      '<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-text">データを読み込めませんでした</div></div>';
+  }
+}
+
+if (sessionStorage.getItem('auth') === '1') init();
+</script>
+</body>
+</html>
