@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>医療・介護関係者向け 資料室 | ホームケアクリニック横浜港南</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange:     #E8823A;
+      --orange-dk:  #C96A28;
+      --orange-lt:  #FDF3EC;
+      --purple:     #8B4F9E;
+      --text:       #333333;
+      --text-sub:   #777777;
+      --text-light: #aaaaaa;
+      --border:     #e8e8e8;
+      --bg:         #f8f8f8;
+      --white:      #ffffff;
+      --radius:     4px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── ヘッダー ── */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+    }
+    .header-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      gap: 16px;
+    }
+    .header-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .header-logo-wrap img {
+      height: 58px;
+      width: auto;
+      display: block;
+    }
+    /* ロゴ画像が読み込めなかった場合のフォールバック */
+    .header-logo-wrap img.logo-error {
+      display: none;
+    }
+    .header-logo-fallback {
+      display: none;
+      width: 48px; height: 48px;
+    }
+    .header-logo-fallback svg { width: 48px; height: 48px; }
+    .header-clinic-name {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: .06em;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .header-back {
+      font-size: 12px;
+      color: var(--orange);
+      text-decoration: none;
+      border: 1px solid var(--orange);
+      border-radius: 2px;
+      padding: 6px 16px;
+      white-space: nowrap;
+      transition: all .15s;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+    }
+    .header-back:hover { background: var(--orange); color: var(--white); }
+
+    /* ── グラデーションライン ── */
+    .header-line {
+      height: 3px;
+      background: linear-gradient(90deg, var(--orange) 0%, #D4629A 50%, var(--purple) 100%);
+    }
+
+    /* ── お知らせバー ── */
+    .notice-bar {
+      background: #FFF9E6;
+      border-bottom: 1px solid #F5E6A0;
+      font-size: 12px;
+      text-align: center;
+      padding: 9px 24px;
+      color: #806200;
+      letter-spacing: .03em;
+      display: none;
+    }
+
+    /* ── ページタイトル帯 ── */
+    .page-hero {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
+      text-align: center;
+    }
+    .page-hero-en {
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: .2em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .page-hero h1 {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: .06em;
+    }
+    .page-hero p {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--text-sub);
+      margin-top: 6px;
+      letter-spacing: .04em;
+    }
+
+    /* ── メッセージセクション ── */
+    .message-section {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 32px;
+      display: none; /* JS で表示 */
+    }
+    .message-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+    }
+    .message-label {
+      flex-shrink: 0;
+      writing-mode: horizontal-tb;
+    }
+    .message-label-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .message-label-line::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 20px;
+      background: var(--orange);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .message-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .message-body {
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--text-sub);
+      line-height: 2;
+      letter-spacing: .03em;
+      flex: 1;
+      white-space: pre-line; /* 改行を反映 */
+    }
+
+    /* ── メイン ── */
+    main {
+      max-width: 1000px;
+      margin: 28px auto;
+      padding: 0 20px 64px;
+    }
+
+    /* ── 検索 ── */
+    .search-row { margin-bottom: 14px; }
+    .search-row input {
+      width: 100%;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 15px;
+      transition: border-color .15s;
+      letter-spacing: .03em;
+    }
+    .search-row input:focus { border-color: var(--orange); }
+    .search-row input::placeholder { color: #ccc; }
+
+    /* ── フィルター ── */
+    .filter-row {
+      display: flex;
+      gap: 0;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .filter-btn {
+      padding: 10px 20px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .filter-btn:hover { color: var(--orange); }
+    .filter-btn.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 500; }
+
+    /* ── 件数・更新 ── */
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .result-count { font-size: 13px; color: var(--text-sub); letter-spacing: .04em; font-weight: 300; }
+    .updated-info { font-size: 12px; color: var(--text-light); letter-spacing: .04em; }
+
+    /* ── カードグリッド ── */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 12px;
+    }
+    .file-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .file-card:hover {
+      border-color: var(--orange);
+      box-shadow: 0 2px 12px rgba(232,130,58,.10);
+    }
+    .card-top { display: flex; gap: 12px; align-items: flex-start; }
+    .type-badge {
+      width: 36px; height: 36px;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+    .badge-pdf   { background: #FEF0F0; color: #CC3333; }
+    .badge-word  { background: #EEF2FF; color: #2A5BD7; }
+    .badge-excel { background: #EEFFF0; color: #1A7A2E; }
+    .badge-ppt   { background: #FFF4EE; color: #C84B00; }
+    .badge-other { background: #F5F5F5; color: #888; }
+    .card-info { flex: 1; min-width: 0; }
+    .card-name { font-size: 15px; font-weight: 500; line-height: 1.5; color: var(--text); word-break: break-all; }
+    .card-desc { font-size: 13px; font-weight: 300; color: var(--text-sub); margin-top: 3px; line-height: 1.6; }
+    .card-date { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+    .card-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--border); padding-top: 10px;
+    }
+    .cat-tag {
+      font-size: 12px; padding: 3px 10px; border-radius: 2px;
+      background: var(--orange-lt); color: var(--orange-dk); letter-spacing: .04em;
+    }
+    .btn-wrap { display: flex; gap: 6px; }
+    .btn-view, .btn-dl {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 16px; border-radius: 2px;
+      font-family: inherit; font-size: 13px; font-weight: 400;
+      cursor: pointer; text-decoration: none; transition: all .15s; letter-spacing: .04em;
+    }
+    .btn-view { border: 1px solid var(--border); color: var(--text-sub); background: var(--white); }
+    .btn-view:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-dl { background: var(--orange); color: var(--white); border: 1px solid var(--orange); }
+    .btn-dl:hover { background: var(--orange-dk); border-color: var(--orange-dk); }
+    .btn-view svg, .btn-dl svg { width: 12px; height: 12px; fill: currentColor; }
+    .btn-dl svg { fill: #fff; }
+
+    /* ── ステータス ── */
+    .status-area { text-align: center; padding: 60px 20px; color: var(--text-sub); font-size: 13px; font-weight: 300; }
+    .status-area.error { color: #cc0000; }
+    .spinner {
+      display: inline-block; width: 28px; height: 28px;
+      border: 2px solid var(--border); border-top-color: var(--orange);
+      border-radius: 50%; animation: spin .8s linear infinite; margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── フッター ── */
+    footer {
+      background: var(--white); border-top: 1px solid var(--border);
+      text-align: center; padding: 20px;
+      font-size: 13px; font-weight: 300; color: var(--text-light); letter-spacing: .05em;
+    }
+    footer a { color: var(--orange); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      .header-back { display: none; }
+      .header-clinic-name { font-size: 14px; }
+      .header-logo-wrap img { height: 36px; }
+      .file-grid { grid-template-columns: 1fr; }
+      header, .message-section, .page-hero { padding-left: 16px; padding-right: 16px; }
+      .message-inner { flex-direction: column; gap: 12px; }
+      main { padding: 0 14px 48px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <!-- ロゴ＋クリニック名 -->
+    <a class="header-logo-wrap" href="https://www.homecare-cl.jp/" target="_blank">
+      <img
+        src="https://www.homecare-cl.jp/assets/img/ci/logo.svg"
+        alt="ホームケアクリニック横浜港南 ロゴ"
+        onerror="this.classList.add('logo-error'); this.nextElementSibling.style.display='block';"
+      />
+      <!-- ロゴ読み込み失敗時のSVGフォールバック -->
+      <span class="header-logo-fallback">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 38C24 38 8 28 8 17C8 12 12 8 17 8C20 8 22.7 9.5 24 12C25.3 9.5 28 8 31 8C36 8 40 12 40 17C40 28 24 38 24 38Z" fill="#E8823A"/>
+          <path d="M17 34C17 34 5 26 5 16C5 11.6 8.6 8 13 8C14.5 8 15.9 8.5 17 9.3L17 12C15.8 11.1 14.4 10.5 13 10.5C10 10.5 7.5 13 7.5 16C7.5 23 17 30 17 34Z" fill="#8B4F9E" opacity=".7"/>
+        </svg>
+      </span>
+    </a>
+    <a class="header-back" href="https://www.homecare-cl.jp/" target="_blank">クリニックHPへ</a>
+  </div>
+</header>
+<div class="header-line"></div>
+
+<div class="notice-bar" id="noticeBar"></div>
+
+<!-- ページタイトル -->
+<div class="page-hero">
+  <div class="page-hero-en">Documents for Medical &amp; Care Professionals</div>
+  <h1>医療・介護関係者向け 資料室</h1>
+  <p>連携用資料・各種様式のダウンロードページです</p>
+</div>
+
+<!-- メッセージセクション（スプレッドシートから動的に表示） -->
+<div class="message-section" id="messageSection">
+  <div class="message-inner">
+    <div class="message-label">
+      <div class="message-label-line">
+        <span class="message-title" id="messageTitle">医療・介護関係者様へ</span>
+      </div>
+    </div>
+    <div class="message-body" id="messageBody"></div>
+  </div>
+</div>
+
+<main>
+  <div class="search-row">
+    <input type="search" id="searchInput" placeholder="ファイル名・説明で検索..." />
+  </div>
+
+  <div class="filter-row" id="filterRow">
+    <button class="filter-btn active" data-cat="all">すべて</button>
+  </div>
+
+  <div class="meta-row">
+    <span class="result-count" id="resultCount"></span>
+    <span class="updated-info" id="updatedInfo"></span>
+  </div>
+
+  <div id="fileArea">
+    <div class="status-area">
+      <div class="spinner"></div><br>資料一覧を読み込んでいます…
+    </div>
+  </div>
+</main>
+
+<footer>
+  <a href="https://www.homecare-cl.jp/">ホームケアクリニック横浜港南</a>　／　医療連携・地域支援室　／　このページは関係機関専用です<br>
+  <span id="fyear"></span>
+</footer>
+
+<script>
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbx9MrQYc3vqLsruq44ERY_CzLSkdMfbrYzkHPOccBGa5MJtCQLfN2nhPh36XJolPCIo/exec';
+
+  document.getElementById('fyear').textContent =
+    '© ' + new Date().getFullYear() + ' ホームケアクリニック横浜港南';
+
+  let allFiles = [], currentCat = 'all', searchWord = '';
+
+  async function loadFiles() {
+    try {
+      const res = await fetch(GAS_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+
+      // お知らせバー
+      if (data.notice) {
+        const bar = document.getElementById('noticeBar');
+        bar.textContent = '📢 ' + data.notice;
+        bar.style.display = 'block';
+      }
+
+      // 最終更新日
+      if (data.updatedAt) {
+        document.getElementById('updatedInfo').textContent = '最終更新：' + data.updatedAt;
+      }
+
+      // メッセージセクション
+      if (data.messageBody) {
+        document.getElementById('messageTitle').textContent = data.messageTitle || '医療・介護関係者様へ';
+        document.getElementById('messageBody').textContent = data.messageBody;
+        document.getElementById('messageSection').style.display = 'block';
+      }
+
+      allFiles = (data.files || []).filter(f =>
+        String(f.active).trim() !== '非表示' &&
+        String(f.active).trim() !== 'FALSE'
+      );
+      buildFilter();
+      render();
+    } catch (e) {
+      document.getElementById('fileArea').innerHTML =
+        '<div class="status-area error">⚠️ 資料一覧の読み込みに失敗しました。<br>しばらくしてから再読み込みをお試しください。</div>';
+    }
+  }
+
+  function buildFilter() {
+    const cats = [...new Set(allFiles.map(f => f.category).filter(Boolean))];
+    const row = document.getElementById('filterRow');
+    cats.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.dataset.cat = cat;
+      btn.textContent = cat;
+      btn.addEventListener('click', () => {
+        currentCat = cat;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+      });
+      row.appendChild(btn);
+    });
+  }
+
+  document.querySelector('[data-cat="all"]').addEventListener('click', function () {
+    currentCat = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    render();
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchWord = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  function typeInfo(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('.pdf'))   return { label: 'PDF',   cls: 'badge-pdf' };
+    if (n.match(/\.docx?/))  return { label: 'Word',  cls: 'badge-word' };
+    if (n.match(/\.xlsx?/))  return { label: 'Excel', cls: 'badge-excel' };
+    if (n.match(/\.pptx?/))  return { label: 'PPT',   cls: 'badge-ppt' };
+    return { label: 'FILE', cls: 'badge-other' };
+  }
+
+  function driveUrls(url) {
+    const m = (url || '').match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) {
+      return {
+        view: `https://drive.google.com/file/d/${m[1]}/view`,
+        dl:   `https://drive.google.com/uc?export=download&id=${m[1]}`
+      };
+    }
+    return { view: url, dl: url };
+  }
+
+  function esc(s) {
+    return String(s || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function render() {
+    let list = allFiles;
+    if (currentCat !== 'all') list = list.filter(f => f.category === currentCat);
+    if (searchWord) list = list.filter(f =>
+      [f.name, f.description, f.category].some(v =>
+        (v || '').toLowerCase().includes(searchWord)
+      )
+    );
+
+    document.getElementById('resultCount').textContent =
+      list.length ? `${list.length} 件` : '';
+
+    const area = document.getElementById('fileArea');
+    if (!list.length) {
+      area.innerHTML = '<div class="status-area">該当する資料が見つかりませんでした。</div>';
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'file-grid';
+
+    list.forEach(f => {
+      const t = typeInfo(f.name);
+      const u = driveUrls(f.url);
+      const card = document.createElement('div');
+      card.className = 'file-card';
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="type-badge ${t.cls}">${t.label}</div>
+          <div class="card-info">
+            <div class="card-name">${esc(f.name)}</div>
+            ${f.description ? `<div class="card-desc">${esc(f.description)}</div>` : ''}
+            ${f.date ? `<div class="card-date">更新：${esc(f.date)}</div>` : ''}
+          </div>
+        </div>
+        <div class="card-bottom">
+          <span class="cat-tag">${esc(f.category || '一般')}</span>
+          <div class="btn-wrap">
+            <a class="btn-view" href="${u.view}" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+              閲覧
+            </a>
+            <a class="btn-dl" href="${u.dl}" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 8h14v2H5z"/></svg>
+              ダウンロード
+            </a>
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    });
+
+    area.innerHTML = '';
+    area.appendChild(grid);
+  }
+
+  loadFiles();
+</script>
+</body>
+</html>
