@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コムニカDB</title>
+<style>
+  :root {
+    --navy: #8e5a7a;
+    --navy-light: #a8694a;
+    --paper: #faf6f3;
+    --paper-card: #ffffff;
+    --line: #ecdfd8;
+    --accent: #e8923c;
+    --accent-soft: #fcebd6;
+    --text: #2e2620;
+    --text-mute: #8a7c72;
+    --header-grad-start: #6b4e8e;
+    --header-grad-end: #c97a5e;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+    background: var(--paper);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, var(--header-grad-start), var(--header-grad-end));
+    color: #fff;
+    padding: 28px 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .header-inner {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: #f3cba0;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  h1 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .search-box {
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 13px 44px 13px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    background: #fff;
+    color: var(--text);
+    outline: none;
+  }
+
+  .search-box input:focus {
+    box-shadow: 0 0 0 3px rgba(232,146,60,0.35);
+  }
+
+  .search-box::after {
+    content: "";
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--text-mute);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .search-box::before {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 64%;
+    width: 7px;
+    height: 2px;
+    background: var(--text-mute);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .filters {
+    max-width: 760px;
+    margin: 16px auto 0;
+    padding: 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--paper-card);
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-mute);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+  }
+
+  .chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 18px 0 10px;
+    font-size: 13px;
+    color: var(--text-mute);
+  }
+
+  .meta-row .count strong {
+    color: var(--navy);
+    font-size: 15px;
+  }
+
+  .card {
+    background: var(--paper-card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+  }
+
+  .card.open {
+    border-color: var(--accent);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 6px;
+    line-height: 1.5;
+  }
+
+  .card-title mark {
+    background: #fde9c8;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  .badge-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+
+  .card-date {
+    font-size: 12px;
+    color: var(--text-mute);
+    font-family: var(--mono);
+  }
+
+  .card-content {
+    display: none;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .card-content mark {
+    background: #fde9c8;
+    border-radius: 2px;
+  }
+
+  .card.open .card-content {
+    display: block;
+  }
+
+  .state-panel {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-mute);
+  }
+
+  .state-panel .glyph {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  .state-panel p {
+    margin: 4px 0;
+    font-size: 14px;
+  }
+
+  .spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--line);
+    border-top-color: var(--navy);
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .retry-btn {
+    margin-top: 14px;
+    padding: 8px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 19px; }
+    .card { padding: 14px 16px; }
+  }
+
+  .back-to-top {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    z-index: 20;
+  }
+
+  .back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .back-to-top:hover {
+    background: var(--accent);
+  }
+
+  .back-to-top svg {
+    width: 20px;
+    height: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="eyebrow">INTERNAL RULES DATABASE</div>
+    <h1>コムニカDB</h1>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="キーワードで検索（例：有給、採血、チーマン）" autocomplete="off">
+    </div>
+  </div>
+  <div class="filters" id="categoryFilters"></div>
+</header>
+
+<main>
+  <div class="meta-row">
+    <div class="count" id="resultCount"></div>
+    <div id="lastUpdated"></div>
+  </div>
+  <div id="resultList"></div>
+</main>
+
+<button class="back-to-top" id="backToTop" aria-label="トップに戻る">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5"></line>
+    <polyline points="5 12 12 5 19 12"></polyline>
+  </svg>
+</button>
+
+<script>
+  // ────────────────────────────────────────────
+  // ▼▼▼ ここにGASのウェブアプリURLを貼り付けてください ▼▼▼
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxx_URGGLGc5GaF-IEx9JKdmXLkDbr4UQLetUX5CjU-6N55VoSDu5meIycwdSaEH1l0/exec';
+  // ▲▲▲ ここにGASのウェブアプリURLを貼り付けてください ▲▲▲
+  // ────────────────────────────────────────────
+
+  const $list = document.getElementById('resultList');
+  const $count = document.getElementById('resultCount');
+  const $updated = document.getElementById('lastUpdated');
+  const $search = document.getElementById('searchInput');
+  const $filters = document.getElementById('categoryFilters');
+
+  let allItems = [];
+  let activeCategory = '';
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+  }
+
+  function highlight(text, query) {
+    const escaped = escapeHtml(text);
+    if (!query) return escaped;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(${escapedQuery})`, 'ig');
+    return escaped.replace(re, '<mark>$1</mark>');
+  }
+
+  function getCategories(item) {
+    if (Array.isArray(item.categories)) return item.categories;
+    if (item.category) return [item.category];
+    return [];
+  }
+
+  function renderFilters() {
+    const categorySet = new Set();
+    allItems.forEach(item => getCategories(item).forEach(c => categorySet.add(c)));
+    const categories = [...categorySet];
+    $filters.innerHTML = '';
+
+    const allChip = document.createElement('div');
+    allChip.className = 'chip' + (activeCategory === '' ? ' active' : '');
+    allChip.textContent = 'すべて';
+    allChip.onclick = () => { activeCategory = ''; render(); renderFilters(); };
+    $filters.appendChild(allChip);
+
+    categories.forEach(cat => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (activeCategory === cat ? ' active' : '');
+      chip.textContent = cat;
+      chip.onclick = () => { activeCategory = cat; render(); renderFilters(); };
+      $filters.appendChild(chip);
+    });
+  }
+
+  function render() {
+    const query = $search.value.trim();
+
+    let filtered = allItems.filter(item => {
+      const itemCategories = getCategories(item);
+      const matchesCategory = !activeCategory || itemCategories.includes(activeCategory);
+      if (!matchesCategory) return false;
+      if (!query) return true;
+      const haystack = (item.title + ' ' + itemCategories.join(' ') + ' ' + item.content).toLowerCase();
+      return haystack.includes(query.toLowerCase());
+    });
+
+    $count.innerHTML = `<strong>${filtered.length}</strong> 件`;
+
+    if (filtered.length === 0) {
+      $list.innerHTML = `
+        <div class="state-panel">
+          <div class="glyph">―</div>
+          <p>該当する規定が見つかりませんでした。</p>
+          <p>別のキーワードでお試しください。</p>
+        </div>`;
+      return;
+    }
+
+    $list.innerHTML = filtered.map(item => {
+      const itemCategories = getCategories(item);
+      const badges = itemCategories
+        .map(c => `<span class="badge">${escapeHtml(c)}</span>`)
+        .join('');
+      return `
+      <div class="card" data-id="${item.id}">
+        <div class="card-top">
+          <div>
+            <p class="card-title">${highlight(item.title, query)}</p>
+            <span class="card-date">更新日: ${escapeHtml(item.updatedAt || '―')}</span>
+          </div>
+          ${badges ? `<div class="badge-group">${badges}</div>` : ''}
+        </div>
+        <div class="card-content">${highlight(item.content, query)}</div>
+      </div>
+    `;
+    }).join('');
+
+    $list.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => card.classList.toggle('open'));
+    });
+  }
+
+  function showLoading() {
+    $list.innerHTML = `
+      <div class="state-panel">
+        <div class="spinner"></div>
+        <p>データを読み込んでいます…</p>
+      </div>`;
+  }
+
+  function showError(message) {
+    $list.innerHTML = `
+      <div class="state-panel">
+        <div class="glyph">!</div>
+        <p>データの取得に失敗しました。</p>
+        <p style="font-size:12px;">${escapeHtml(message)}</p>
+        <button class="retry-btn" onclick="loadData()">再読み込み</button>
+      </div>`;
+  }
+
+  async function loadData() {
+    showLoading();
+    if (!SCRIPT_URL || SCRIPT_URL.includes('XXXX')) {
+      showError('SCRIPT_URLが設定されていません。HTML内のSCRIPT_URLにGASのウェブアプリURLを貼り付けてください。');
+      return;
+    }
+    try {
+      const res = await fetch(SCRIPT_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.message || '不明なエラー');
+
+      allItems = data.items || [];
+      $updated.textContent = data.updatedAt
+        ? `最終取得: ${new Date(data.updatedAt).toLocaleString('ja-JP')}`
+        : '';
+
+      renderFilters();
+      render();
+    } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  $search.addEventListener('input', render);
+
+  const $backToTop = document.getElementById('backToTop');
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 320) {
+      $backToTop.classList.add('visible');
+    } else {
+      $backToTop.classList.remove('visible');
+    }
+  });
+
+  $backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  loadData();
+</script>
+
+</body>
+</html>
