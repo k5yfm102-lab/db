@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>マイカレンダー</title>
+<style>
+  :root{
+    color-scheme: light;
+    --blue:#2563eb; --blue-light:#eff6ff;
+    --red:#dc2626; --red-light:#fef2f2;
+    --gray:#6b7280; --gray-light:#f1f5f9;
+    --bg:#f8fafc; --card:#ffffff; --border:#e2e8f0; --text:#1e293b;
+    --green:#16a34a; --green-light:#f0fdf4;
+    --orange:#ea580c; --orange-light:#fff7ed;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Segoe UI",sans-serif;
+    margin:0; background:var(--bg); color:var(--text); font-size:14px;
+  }
+  .app{max-width:1040px; margin:0 auto; padding:16px 16px 40px;}
+  header{margin-bottom:14px;}
+  header h1{font-size:19px; margin:0 0 2px; font-weight:700;}
+  header p{margin:0; font-size:12px; color:var(--gray);}
+
+  .tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .tab-btn{
+    padding:8px 18px; border-radius:8px; border:1px solid var(--border);
+    background:var(--card); cursor:pointer; font-size:13px; font-weight:600; color:var(--text);
+  }
+  .tab-btn.active{background:var(--blue); color:#fff; border-color:var(--blue);}
+
+  .card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px;}
+  .card h2{font-size:14px; margin:0 0 10px; font-weight:700;}
+
+  /* Quick add */
+  .quick-row{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start;}
+  .quick-row input[type=text]{
+    flex:1 1 320px; padding:9px 10px; border:1px solid var(--border); border-radius:8px; font-size:14px;
+  }
+  .quick-row select, .quick-row input[type=date]{
+    padding:9px 8px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:#fff;
+  }
+  .quick-row button{
+    padding:9px 18px; border:none; border-radius:8px; background:var(--blue); color:#fff;
+    font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .quick-row button:hover{background:#1d4ed8;}
+  .hint{font-size:11px; color:var(--gray); margin-top:6px;}
+  .preview{font-size:12.5px; margin-top:8px; min-height:18px;}
+  .preview.ok{color:var(--green);}
+  .preview.err{color:var(--red);}
+  .repeat-until-wrap{display:none; align-items:center; gap:6px;}
+  .repeat-until-wrap.show{display:flex;}
+  .repeat-until-wrap label{font-size:12px; color:var(--gray);}
+
+  /* Month nav */
+  .month-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .month-nav .title{font-size:16px; font-weight:700;}
+  .month-nav .btns{display:flex; gap:6px;}
+  .month-nav button{
+    border:1px solid var(--border); background:#fff; border-radius:6px; padding:6px 12px;
+    cursor:pointer; font-size:12.5px; font-weight:600; color:var(--text);
+  }
+  .month-nav button:hover{background:var(--gray-light);}
+
+  /* Calendar grid */
+  .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .wd{text-align:center; font-size:11.5px; color:var(--gray); padding:2px 0 6px; font-weight:700;}
+  .wd.sun{color:var(--red);} .wd.sat{color:var(--blue);}
+  .day-cell{
+    min-height:96px; border:1px solid var(--border); border-radius:8px; padding:4px 4px 6px;
+    background:#fff; font-size:11px; display:flex; flex-direction:column; overflow:hidden;
+  }
+  .day-cell.other-month{background:#fafafa; opacity:.5;}
+  .day-cell.today{border:2px solid var(--blue);}
+  .day-head{display:flex; justify-content:space-between; align-items:baseline;}
+  .day-num{font-weight:700; font-size:12.5px;}
+  .day-num.sun, .holiday-name{color:var(--red);}
+  .day-num.sat{color:var(--blue);}
+  .holiday-name{font-size:9.5px; line-height:1.15; margin-bottom:2px;}
+  .pill{
+    border-radius:5px; padding:1.5px 4px; margin-top:2px; font-size:10px; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    background:var(--blue-light); border-left:3px solid var(--blue); color:#1e3a8a;
+  }
+  .pill.meeting{background:#fef9c3; border-left-color:#ca8a04; color:#854d0e;}
+  .pill.vacation{background:var(--red-light); border-left-color:var(--red); color:var(--red);}
+  .pill.done{background:var(--gray-light); border-left-color:var(--gray); color:var(--gray); text-decoration:line-through;}
+  .pill.extra{display:none;}
+  .more-btn{
+    font-size:9.5px; color:var(--blue); cursor:pointer; background:none; border:none; padding:1px 0 0;
+    text-align:left; font-weight:700;
+  }
+
+  /* List view */
+  .section-title{
+    font-size:13px; font-weight:700; margin:18px 0 8px; display:flex; align-items:center; gap:6px;
+  }
+  .section-title:first-child{margin-top:0;}
+  .badge-count{
+    background:var(--gray-light); color:var(--gray); border-radius:10px; padding:1px 8px; font-size:11px; font-weight:700;
+  }
+  .list-row{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border);
+    border-radius:8px; margin-bottom:6px; background:#fff;
+  }
+  .list-row.done{background:var(--gray-light); opacity:.8;}
+  .list-row.today-row{border:2px solid var(--blue); background:var(--blue-light);}
+  .list-row .when{width:150px; flex:0 0 150px; font-size:12.5px; font-weight:600; color:var(--text);}
+  .list-row.overdue .when{color:var(--orange);}
+  .list-row .content{flex:1; font-size:13.5px;}
+  .list-row.done .content{text-decoration:line-through; color:var(--gray);}
+  .tag{font-size:10px; padding:1px 6px; border-radius:8px; background:var(--blue-light); color:var(--blue); margin-left:6px; font-weight:600;}
+  .tag.overdue-tag{background:var(--orange-light); color:var(--orange);}
+  .tag.today-tag{background:var(--blue); color:#fff;}
+  .load-more-btn{
+    display:block; width:100%; text-align:center; margin-top:6px; padding:9px;
+    border:1px dashed var(--border); border-radius:8px; background:#fff; color:var(--blue);
+    font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .load-more-btn:hover{background:var(--blue-light);}
+  .row-actions{display:flex; gap:6px; flex:0 0 auto;}
+  .row-actions button{
+    border:1px solid var(--border); background:#fff; border-radius:6px; padding:6px 10px; font-size:11.5px;
+    cursor:pointer; font-weight:600; white-space:nowrap;
+  }
+  .row-actions .finish-btn{color:var(--green); border-color:#bbf7d0;}
+  .row-actions .undo-btn{color:var(--blue); border-color:#bfdbfe;}
+  .row-actions .del-btn{color:var(--red); border-color:#fecaca;}
+  .empty{color:var(--gray); font-size:12.5px; padding:14px 4px;}
+
+  /* Modal */
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(15,23,42,.4); align-items:center; justify-content:center; z-index:50;
+  }
+  .modal-bg.show{display:flex;}
+  .modal{background:#fff; border-radius:12px; padding:18px; width:280px; box-shadow:0 10px 30px rgba(0,0,0,.15);}
+  .modal .m-date{font-size:12px; color:var(--gray); margin-bottom:4px;}
+  .modal .m-content{font-size:15px; font-weight:700; margin-bottom:14px; word-break:break-word;}
+  .modal .m-btns{display:flex; flex-direction:column; gap:8px;}
+  .modal button{padding:9px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:13px; cursor:pointer; font-weight:600;}
+  .modal .m-finish{color:var(--green); border-color:#bbf7d0;}
+  .modal .m-undo{color:var(--blue); border-color:#bfdbfe;}
+  .modal .m-del{color:var(--red); border-color:#fecaca;}
+  .modal .m-close{color:var(--gray);}
+
+  .m-occ-actions{border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:10px 0; margin-bottom:12px;}
+  .m-occ-label{font-size:11px; color:var(--gray); margin-bottom:6px;}
+  .m-occ-row{display:flex; gap:8px;}
+  .m-occ-btn{flex:1; padding:7px; font-size:12px; border:1px solid var(--border); border-radius:7px; background:#fff; cursor:pointer; font-weight:600; color:var(--blue);}
+  .m-occ-btn:hover{background:var(--blue-light);}
+  .m-move-form{margin-top:8px; display:flex; flex-direction:column; gap:6px;}
+  .m-move-form input{padding:7px 8px; border:1px solid var(--border); border-radius:7px; font-size:12.5px;}
+  .m-move-btns{display:flex; gap:8px;}
+  .m-move-btns button{flex:1; padding:7px; font-size:12px; border-radius:7px; border:1px solid var(--border); cursor:pointer; font-weight:600; background:#fff;}
+  .m-move-btns #mMoveSaveBtn{color:var(--green); border-color:#bbf7d0;}
+  .row-actions .edit-occ-btn{color:var(--blue); border-color:#bfdbfe;}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff;
+    padding:10px 18px; border-radius:8px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s;
+    z-index:60; max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>マイカレンダー</h1>
+    <p>休日は Google カレンダー（日本の祝日）を参照しています</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="calendar" id="tabCalendarBtn">カレンダー</button>
+    <button class="tab-btn" data-tab="list" id="tabListBtn">リスト</button>
+  </div>
+
+  <div class="card">
+    <h2>予定をかんたん登録</h2>
+    <div class="quick-row">
+      <input type="text" id="quickInput" placeholder="例：8/4 12:00 会議 ／ 08041200 会議 ／ 8/4 会議">
+      <select id="repeatType">
+        <option value="none">繰り返しなし</option>
+        <option value="daily">毎日</option>
+        <option value="weekly">毎週</option>
+        <option value="monthly">毎月</option>
+        <option value="yearly">毎年</option>
+      </select>
+      <div class="repeat-until-wrap" id="repeatUntilWrap">
+        <label>終了日</label>
+        <input type="date" id="repeatUntil">
+      </div>
+      <button id="addBtn">登録</button>
+    </div>
+    <div class="hint">入力順は「日時 → 内容」。日時と内容の間は半角スペースで区切ってください。例: 2026/8/4 12:00 会議 ／ 8月4日12時 会議 ／ 8/4 会議（時刻省略可）</div>
+    <div class="preview" id="preview"></div>
+  </div>
+
+  <div id="calendarView">
+    <div class="card">
+      <div class="month-nav">
+        <div class="btns">
+          <button id="prevBtn">◀ 前月</button>
+          <button id="todayBtn">今月</button>
+          <button id="nextBtn">翌月 ▶</button>
+        </div>
+        <div class="title" id="monthTitle"></div>
+        <div style="width:150px"></div>
+      </div>
+      <div class="grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <div id="listView" style="display:none;">
+    <div class="card">
+      <div class="section-title">進行中 <span class="badge-count" id="activeCount">0</span></div>
+      <div id="activeList"></div>
+      <div class="section-title">終了済 <span class="badge-count" id="doneCount">0</span></div>
+      <div id="doneList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="m-date" id="mDate"></div>
+    <div class="m-content" id="mContent"></div>
+    <div class="m-occ-actions" id="mOccActions" style="display:none;">
+      <div class="m-occ-label">この回だけの操作（他の回には影響しません）</div>
+      <div class="m-occ-row">
+        <button class="m-occ-btn" id="mMoveBtn">日程を変更</button>
+        <button class="m-occ-btn" id="mSkipBtn">この回をスキップ</button>
+      </div>
+      <div class="m-move-form" id="mMoveForm" style="display:none;">
+        <input type="date" id="mMoveDate">
+        <input type="time" id="mMoveTime">
+        <div class="m-move-btns">
+          <button id="mMoveSaveBtn">保存</button>
+          <button id="mMoveCancelBtn">キャンセル</button>
+        </div>
+      </div>
+    </div>
+    <div class="m-btns">
+      <button class="m-finish" id="mFinishBtn"></button>
+      <button class="m-del" id="mDelBtn">削除</button>
+      <button class="m-close" id="mCloseBtn">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  const HOLIDAY_CAL_ID = "ja.japanese#holiday@group.v.calendar.google.com";
+  const LIST_EVENTS_TOOL = "mcp__75efbc83-8805-4aad-98b3-81ed2a74e52f__list_events";
+  const STORAGE_KEY = "kcal_schedules_v1";
+  const WD = ["日","月","火","水","木","金","土"];
+  const REPEAT_LABEL = {none:"", daily:"毎日", weekly:"毎週", monthly:"毎月", yearly:"毎年"};
+  const VACATION_KEYWORDS = ["休み","やすみ","夏季休暇"];
+
+  const now0 = new Date();
+  const state = {
+    schedules: [],
+    view: "calendar",
+    y: now0.getFullYear(),
+    m: now0.getMonth(), // 0-11
+    holidays: {},        // dateStr -> name
+    holidayFetched: new Set(), // "YYYY-MM" keys already requested
+    modalCtx: null       // {scheduleId, date}
+  };
+
+  /* ---------- storage ---------- */
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      state.schedules = raw ? JSON.parse(raw) : [];
+    }catch(e){ state.schedules = []; }
+  }
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.schedules));
+  }
+
+  /* ---------- date helpers ---------- */
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function fmtISO(d){ return d.getUTCFullYear()+"-"+pad(d.getUTCMonth()+1)+"-"+pad(d.getUTCDate()); }
+  function toDateObj(dateStr){
+    const [y,m,d] = dateStr.split("-").map(Number);
+    return new Date(Date.UTC(y, m-1, d));
+  }
+  function todayISO(){
+    const t = new Date();
+    return fmtISO(new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())));
+  }
+  function jpDateLabel(dateStr, timeStr){
+    const d = toDateObj(dateStr);
+    const s = (d.getUTCMonth()+1)+"月"+d.getUTCDate()+"日("+WD[d.getUTCDay()]+")";
+    return timeStr ? s+" "+timeStr : s+" 終日";
+  }
+
+  /* ---------- quick input parsing ---------- */
+  function normalizeInput(raw){
+    let s = raw.replace(/[０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+    s = s.replace(/／/g,"/").replace(/：/g,":").replace(/　/g," ");
+    s = s.replace(/\s+/g," ").trim();
+    return s;
+  }
+
+  function parseQuickInput(raw){
+    const s = normalizeInput(raw || "");
+    if(!s) return null;
+    const now = new Date();
+    let year=null, month=null, day=null, hour=null, minute=null, rest=null, m;
+
+    if((m = s.match(/^(今日|明日|明後日)\s*(?:(\d{1,2})[:時](\d{2})分?|(\d{3,4}))?\s*(.*)$/))){
+      const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const offset = m[1]==="今日"?0:(m[1]==="明日"?1:2);
+      base.setDate(base.getDate()+offset);
+      year=base.getFullYear(); month=base.getMonth()+1; day=base.getDate();
+      if(m[2]!==undefined){ hour=+m[2]; minute=+m[3]; }
+      else if(m[4]!==undefined){ const t=m[4].padStart(4,"0"); hour=+t.slice(0,2); minute=+t.slice(2); }
+      rest = m[5];
+    } else if((m = s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(?:\s+(.*))?$/))){
+      year=+m[1]; month=+m[2]; day=+m[3]; hour=+m[4]; minute=+m[5]; rest=m[6]||"";
+    } else if((m = s.match(/^(\d{2})(\d{2})(\d{2})(\d{2})(?:\s+(.*))?$/))){
+      year=now.getFullYear(); month=+m[1]; day=+m[2]; hour=+m[3]; minute=+m[4]; rest=m[5]||"";
+    } else if((m = s.match(/^(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})日?\s*(?:(\d{1,2})[:時](\d{2})分?|(\d{3,4}))?\s*(.*)$/))){
+      year=+m[1]; month=+m[2]; day=+m[3];
+      if(m[4]!==undefined){ hour=+m[4]; minute=+m[5]; }
+      else if(m[6]!==undefined){ const t=m[6].padStart(4,"0"); hour=+t.slice(0,2); minute=+t.slice(2); }
+      rest = m[7]||"";
+    } else if((m = s.match(/^(\d{1,2})[\/\-月](\d{1,2})日?\s*(?:(\d{1,2})[:時](\d{2})分?|(\d{3,4}))?\s*(.*)$/))){
+      month=+m[1]; day=+m[2];
+      if(m[3]!==undefined){ hour=+m[3]; minute=+m[4]; }
+      else if(m[5]!==undefined){ const t=m[5].padStart(4,"0"); hour=+t.slice(0,2); minute=+t.slice(2); }
+      rest = m[6]||"";
+      year = now.getFullYear();
+    } else {
+      return null;
+    }
+
+    if(month<1||month>12) return null;
+    const dim = new Date(year, month, 0).getDate();
+    if(day<1||day>dim) return null;
+    if(hour!==null && (hour<0||hour>23)) return null;
+    if(minute!==null && (minute<0||minute>59)) return null;
+    const content = (rest||"").trim();
+    if(!content) return null;
+
+    const dateStr = year+"-"+pad(month)+"-"+pad(day);
+    const timeStr = hour!==null ? pad(hour)+":"+pad(minute) : null;
+    return {date:dateStr, time:timeStr, content:content};
+  }
+
+  /* ---------- repeat occurrence generation ---------- */
+  function addInterval(d, type){
+    const nd = new Date(d);
+    if(type==="daily") nd.setUTCDate(nd.getUTCDate()+1);
+    else if(type==="weekly") nd.setUTCDate(nd.getUTCDate()+7);
+    else if(type==="monthly") nd.setUTCMonth(nd.getUTCMonth()+1);
+    else if(type==="yearly") nd.setUTCFullYear(nd.getUTCFullYear()+1);
+    return nd;
+  }
+  // Each occurrence carries:
+  //   key  - the natural, un-shifted date for this instance of the series
+  //          (stable identity, used for doneDates/doneAt/exceptions lookups)
+  //   date - the date it should actually be displayed/registered on
+  //   time - the time it should actually be displayed/registered at
+  // key === date/time unless this instance has an override in sch.exceptions
+  // (set via "この回だけ日程変更" / "この回をスキップ").
+  function occurrenceFor(sch, key, naturalDate, naturalTime, rangeStart, rangeEnd, results){
+    const ex = (sch.exceptions || {})[key];
+    if(ex && ex.type === "skip") return;
+    let date = naturalDate, time = naturalTime;
+    if(ex && ex.type === "moved"){
+      date = ex.date;
+      time = ex.time !== undefined ? ex.time : naturalTime;
+    }
+    const d = toDateObj(date);
+    if(isNaN(d.getTime())) return;
+    if(d>=rangeStart && d<=rangeEnd) results.push({key, date, time});
+  }
+
+  function generateOccurrences(sch, rangeStartStr, rangeEndStr){
+    const rangeStart = toDateObj(rangeStartStr);
+    const rangeEnd = toDateObj(rangeEndStr);
+    const base = toDateObj(sch.date);
+    const type = sch.repeatType || "none";
+    const results = [];
+    if(type==="none"){
+      occurrenceFor(sch, sch.date, sch.date, sch.time, rangeStart, rangeEnd, results);
+      return results;
+    }
+    const cap = sch.until ? toDateObj(sch.until) : (()=>{ const d=new Date(base); d.setUTCFullYear(d.getUTCFullYear()+2); return d; })();
+    let cur = new Date(base);
+    let guard = 0;
+    while(cur<=cap && guard<3000){
+      const nd = fmtISO(cur);
+      occurrenceFor(sch, nd, nd, sch.time, rangeStart, rangeEnd, results);
+      cur = addInterval(cur, type);
+      guard++;
+    }
+    return results;
+  }
+
+  /* ---------- status ---------- */
+  function isDone(sch, occKey){ return (sch.doneDates||[]).indexOf(occKey) !== -1; }
+  function toggleOccurrence(scheduleId, occKey){
+    const sch = state.schedules.find(x=>x.id===scheduleId);
+    if(!sch) return;
+    sch.doneDates = sch.doneDates || [];
+    sch.doneAt = sch.doneAt || {};
+    const idx = sch.doneDates.indexOf(occKey);
+    if(idx!==-1){
+      sch.doneDates.splice(idx,1);
+      delete sch.doneAt[occKey];
+    } else {
+      sch.doneDates.push(occKey);
+      sch.doneAt[occKey] = Date.now();
+    }
+    save();
+    renderAll();
+  }
+  function deleteSchedule(scheduleId){
+    state.schedules = state.schedules.filter(x=>x.id!==scheduleId);
+    save();
+    renderAll();
+  }
+
+  /* ---------- holidays via Google Calendar ---------- */
+  async function ensureHolidays(year, month){ // month 0-11
+    const key = year+"-"+pad(month+1);
+    if(state.holidayFetched.has(key)) return;
+    state.holidayFetched.add(key);
+    const start = new Date(Date.UTC(year, month, 1));
+    start.setUTCDate(start.getUTCDate()-7);
+    const end = new Date(Date.UTC(year, month+1, 0));
+    end.setUTCDate(end.getUTCDate()+7);
+    const startTime = start.toISOString();
+    const endTime = end.toISOString();
+    try{
+      const r = await window.cowork.callMcpTool(LIST_EVENTS_TOOL, {
+        calendarId: HOLIDAY_CAL_ID, startTime, endTime, orderBy: "startTime"
+      });
+      if(r.isError) return;
+      const data = r.structuredContent ?? JSON.parse(r.content[0].text);
+      const events = data.events || [];
+      events.forEach(ev=>{
+        const ds = (ev.start && (ev.start.date || ev.start.dateTime)) ? (ev.start.date||ev.start.dateTime).slice(0,10) : null;
+        if(ds) state.holidays[ds] = ev.summary || "";
+      });
+      renderCalendar();
+    }catch(e){ /* silent fail, calendar still usable without holiday labels */ }
+  }
+
+  /* ---------- toast ---------- */
+  let toastTimer = null;
+  function showToast(msg){
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove("show"), 2200);
+  }
+
+  /* ---------- rendering: tabs ---------- */
+  function renderAll(){
+    renderCalendar();
+    renderList();
+  }
+  function switchTab(tab){
+    state.view = tab;
+    document.getElementById("tabCalendarBtn").classList.toggle("active", tab==="calendar");
+    document.getElementById("tabListBtn").classList.toggle("active", tab==="list");
+    document.getElementById("calendarView").style.display = tab==="calendar" ? "" : "none";
+    document.getElementById("listView").style.display = tab==="list" ? "" : "none";
+    if(tab==="list") renderList();
+  }
+
+  /* ---------- rendering: calendar ---------- */
+  function renderCalendar(){
+    const y = state.y, m = state.m;
+    document.getElementById("monthTitle").textContent = y+"年"+(m+1)+"月";
+    ensureHolidays(y, m);
+
+    const firstOfMonth = new Date(Date.UTC(y, m, 1));
+    const firstWeekday = firstOfMonth.getUTCDay();
+    const daysInMonth = new Date(Date.UTC(y, m+1, 0)).getUTCDate();
+    const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+    const gridStartDate = new Date(firstOfMonth); gridStartDate.setUTCDate(gridStartDate.getUTCDate()-firstWeekday);
+    const gridEndDate = new Date(gridStartDate); gridEndDate.setUTCDate(gridEndDate.getUTCDate()+totalCells-1);
+    const gridStartStr = fmtISO(gridStartDate), gridEndStr = fmtISO(gridEndDate);
+
+    // bucket occurrences by date
+    const byDate = {};
+    state.schedules.forEach(sch=>{
+      const occs = generateOccurrences(sch, gridStartStr, gridEndStr);
+      occs.forEach(occ=>{
+        (byDate[occ.date] = byDate[occ.date] || []).push({sch, occ});
+      });
+    });
+    Object.keys(byDate).forEach(ds=>{
+      byDate[ds].sort((a,b)=>{
+        const ta = a.occ.time || "";
+        const tb = b.occ.time || "";
+        if(ta==="" && tb==="") return 0;
+        if(ta==="") return -1;
+        if(tb==="") return 1;
+        return ta.localeCompare(tb);
+      });
+    });
+
+    const grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+    WD.forEach((w,i)=>{
+      const el = document.createElement("div");
+      el.className = "wd" + (i===0?" sun":i===6?" sat":"");
+      el.textContent = w;
+      grid.appendChild(el);
+    });
+
+    const todayStr = todayISO();
+    const cur = new Date(gridStartDate);
+    for(let i=0;i<totalCells;i++){
+      const ds = fmtISO(cur);
+      const inMonth = cur.getUTCMonth()===m;
+      const wd = cur.getUTCDay();
+      const cell = document.createElement("div");
+      cell.className = "day-cell" + (inMonth?"":" other-month") + (ds===todayStr?" today":"");
+
+      const head = document.createElement("div");
+      head.className = "day-head";
+      const num = document.createElement("div");
+      num.className = "day-num" + (wd===0?" sun":wd===6?" sat":"");
+      num.textContent = cur.getUTCDate();
+      head.appendChild(num);
+      cell.appendChild(head);
+
+      if(state.holidays[ds]){
+        const hn = document.createElement("div");
+        hn.className = "holiday-name";
+        hn.textContent = state.holidays[ds];
+        cell.appendChild(hn);
+      }
+
+      const items = byDate[ds] || [];
+      items.forEach((entry, idx)=>{
+        const {sch, occ} = entry;
+        const pill = document.createElement("div");
+        const done = isDone(sch, occ.key);
+        const isVacation = VACATION_KEYWORDS.some(k=>sch.content.indexOf(k)!==-1);
+        const isMeeting = !isVacation && sch.content.indexOf("会議") !== -1;
+        pill.className = "pill" + (isVacation?" vacation":isMeeting?" meeting":"") + (done?" done":"") + (idx>=5?" extra":"");
+        pill.textContent = (occ.time ? occ.time+" " : "") + sch.content;
+        pill.title = sch.content;
+        pill.dataset.id = sch.id;
+        pill.dataset.date = ds;
+        pill.addEventListener("click", ()=>openModal(sch.id, occ.key, occ.date, occ.time));
+        cell.appendChild(pill);
+      });
+      if(items.length>5){
+        const btn = document.createElement("button");
+        btn.className = "more-btn";
+        btn.textContent = "+"+(items.length-5)+"件";
+        btn.addEventListener("click", ()=>{
+          const extras = cell.querySelectorAll(".pill.extra");
+          const showing = extras[0] && extras[0].style.display==="block";
+          extras.forEach(p=>p.style.display = showing ? "none" : "block");
+          btn.textContent = showing ? "+"+(items.length-5)+"件" : "閉じる";
+        });
+        cell.appendChild(btn);
+      }
+
+      grid.appendChild(cell);
+      cur.setUTCDate(cur.getUTCDate()+1);
+    }
+  }
+
+  /* ---------- rendering: list ---------- */
+  function buildActiveRow(item, todayStr){
+    const overdue = item.date < todayStr;
+    const isToday = item.date === todayStr;
+    const repeating = item.sch.repeatType && item.sch.repeatType!=="none";
+    const row = document.createElement("div");
+    row.className = "list-row" + (overdue ? " overdue" : "") + (isToday ? " today-row" : "");
+    row.innerHTML =
+      '<div class="when">'+escapeHtml(jpDateLabel(item.date, item.time))+'</div>'+
+      '<div class="content">'+escapeHtml(item.sch.content)+
+        (repeating ? '<span class="tag">🔁 '+REPEAT_LABEL[item.sch.repeatType]+'</span>' : '')+
+        (isToday ? '<span class="tag today-tag">本日</span>' : '')+
+        (overdue ? '<span class="tag overdue-tag">期限超過</span>' : '')+
+      '</div>'+
+      '<div class="row-actions">'+
+        '<button class="finish-btn">終了にする</button>'+
+        (repeating ? '<button class="edit-occ-btn">この回のみ変更</button>' : '')+
+        '<button class="del-btn">削除</button>'+
+      '</div>';
+    row.querySelector(".finish-btn").addEventListener("click", ()=>toggleOccurrence(item.sch.id, item.occKey));
+    row.querySelector(".del-btn").addEventListener("click", ()=>confirmDelete(item.sch.id));
+    const editBtn = row.querySelector(".edit-occ-btn");
+    if(editBtn) editBtn.addEventListener("click", ()=>openModal(item.sch.id, item.occKey, item.date, item.time));
+    return row;
+  }
+
+  function renderList(){
+    const todayStr = todayISO();
+    const rangeStartD = new Date(); rangeStartD.setDate(rangeStartD.getDate()-90);
+    const rangeEndD = new Date(); rangeEndD.setDate(rangeEndD.getDate()+365);
+    const rangeStart = fmtISO(new Date(Date.UTC(rangeStartD.getFullYear(), rangeStartD.getMonth(), rangeStartD.getDate())));
+    const rangeEnd = fmtISO(new Date(Date.UTC(rangeEndD.getFullYear(), rangeEndD.getMonth(), rangeEndD.getDate())));
+
+    const active = [], done = [];
+    state.schedules.forEach(sch=>{
+      const occs = generateOccurrences(sch, rangeStart, rangeEnd);
+      occs.forEach(occ=>{
+        if(isDone(sch, occ.key)){
+          done.push({sch, occKey:occ.key, date:occ.date, time:occ.time, doneAt:(sch.doneAt||{})[occ.key]||0});
+        } else {
+          active.push({sch, occKey:occ.key, date:occ.date, time:occ.time});
+        }
+      });
+    });
+    active.sort((a,b)=> (a.date+(a.time||"")).localeCompare(b.date+(b.time||"")));
+    done.sort((a,b)=> b.doneAt - a.doneAt);
+
+    document.getElementById("activeCount").textContent = active.length;
+    document.getElementById("doneCount").textContent = done.length;
+
+    const activeEl = document.getElementById("activeList");
+    const doneEl = document.getElementById("doneList");
+    activeEl.innerHTML = "";
+    doneEl.innerHTML = "";
+
+    if(active.length===0){
+      activeEl.innerHTML = '<div class="empty">進行中の予定はありません</div>';
+    } else {
+      const foldEndD = new Date(); foldEndD.setDate(foldEndD.getDate()+6);
+      const foldEndStr = fmtISO(new Date(Date.UTC(foldEndD.getFullYear(), foldEndD.getMonth(), foldEndD.getDate())));
+      const visible = active.filter(item=>item.date <= foldEndStr);
+      const more = active.filter(item=>item.date > foldEndStr);
+
+      visible.forEach(item=> activeEl.appendChild(buildActiveRow(item, todayStr)));
+
+      if(more.length>0){
+        const moreWrap = document.createElement("div");
+        moreWrap.style.display = "none";
+        more.forEach(item=> moreWrap.appendChild(buildActiveRow(item, todayStr)));
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "load-more-btn";
+        const labelMore = "もっと見る（+"+more.length+"件）";
+        const labelLess = "閉じる";
+        toggleBtn.textContent = labelMore;
+        toggleBtn.addEventListener("click", ()=>{
+          const showing = moreWrap.style.display !== "none";
+          moreWrap.style.display = showing ? "none" : "block";
+          toggleBtn.textContent = showing ? labelMore : labelLess;
+        });
+        activeEl.appendChild(toggleBtn);
+        activeEl.appendChild(moreWrap);
+      }
+    }
+
+    if(done.length===0){
+      doneEl.innerHTML = '<div class="empty">終了済みの予定はありません</div>';
+    } else {
+      done.forEach(item=>{
+        const row = document.createElement("div");
+        row.className = "list-row done";
+        row.innerHTML =
+          '<div class="when">'+escapeHtml(jpDateLabel(item.date, item.time))+'</div>'+
+          '<div class="content">'+escapeHtml(item.sch.content)+
+            (item.sch.repeatType && item.sch.repeatType!=="none" ? '<span class="tag">🔁 '+REPEAT_LABEL[item.sch.repeatType]+'</span>' : '')+
+          '</div>'+
+          '<div class="row-actions">'+
+            '<button class="undo-btn">進行中に戻す</button>'+
+            '<button class="del-btn">削除</button>'+
+          '</div>';
+        row.querySelector(".undo-btn").addEventListener("click", ()=>toggleOccurrence(item.sch.id, item.occKey));
+        row.querySelector(".del-btn").addEventListener("click", ()=>confirmDelete(item.sch.id));
+        doneEl.appendChild(row);
+      });
+    }
+  }
+
+  function confirmDelete(scheduleId){
+    const sch = state.schedules.find(x=>x.id===scheduleId);
+    if(!sch) return;
+    const msg = (sch.repeatType && sch.repeatType!=="none")
+      ? "この予定は繰り返し設定です。すべての回をまとめて削除しますか？\n（1回分だけ消したい場合はキャンセルして「この回をスキップ」を使ってください）"
+      : "この予定を削除しますか？";
+    if(confirm(msg)) deleteSchedule(scheduleId);
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  /* ---------- modal ---------- */
+  function openModal(scheduleId, occKey, displayDate, displayTime){
+    const sch = state.schedules.find(x=>x.id===scheduleId);
+    if(!sch) return;
+    state.modalCtx = {scheduleId, occKey, date:displayDate, time:displayTime};
+    document.getElementById("mDate").textContent = jpDateLabel(displayDate, displayTime) +
+      (sch.repeatType && sch.repeatType!=="none" ? "　🔁 "+REPEAT_LABEL[sch.repeatType] : "");
+    document.getElementById("mContent").textContent = sch.content;
+    const done = isDone(sch, occKey);
+    const finishBtn = document.getElementById("mFinishBtn");
+    finishBtn.textContent = done ? "進行中に戻す" : "終了にする";
+    finishBtn.className = done ? "m-undo" : "m-finish";
+
+    const occActions = document.getElementById("mOccActions");
+    document.getElementById("mMoveForm").style.display = "none";
+    if(sch.repeatType && sch.repeatType!=="none"){
+      occActions.style.display = "block";
+      document.getElementById("mMoveDate").value = displayDate;
+      document.getElementById("mMoveTime").value = displayTime || "";
+    } else {
+      occActions.style.display = "none";
+    }
+
+    document.getElementById("modalBg").classList.add("show");
+  }
+  function closeModal(){
+    document.getElementById("modalBg").classList.remove("show");
+    state.modalCtx = null;
+  }
+
+  function moveOccurrence(){
+    if(!state.modalCtx) return;
+    const {scheduleId, occKey} = state.modalCtx;
+    const sch = state.schedules.find(x=>x.id===scheduleId);
+    if(!sch) return;
+    const newDate = document.getElementById("mMoveDate").value;
+    const newTime = document.getElementById("mMoveTime").value;
+    if(!newDate){ showToast("日付を入力してください"); return; }
+    sch.exceptions = sch.exceptions || {};
+    sch.exceptions[occKey] = {type:"moved", date:newDate, time: newTime || null};
+    save();
+    closeModal();
+    renderAll();
+    showToast("この回だけ日程を変更しました");
+  }
+  function skipOccurrence(){
+    if(!state.modalCtx) return;
+    const {scheduleId, occKey} = state.modalCtx;
+    const sch = state.schedules.find(x=>x.id===scheduleId);
+    if(!sch) return;
+    if(!confirm("この回だけをスキップします（他の回には影響しません）。よろしいですか？")) return;
+    sch.exceptions = sch.exceptions || {};
+    sch.exceptions[occKey] = {type:"skip"};
+    save();
+    closeModal();
+    renderAll();
+    showToast("この回をスキップしました");
+  }
+
+  /* ---------- quick add wiring ---------- */
+  function updatePreview(){
+    const raw = document.getElementById("quickInput").value;
+    const el = document.getElementById("preview");
+    if(!raw.trim()){ el.textContent=""; el.className="preview"; return; }
+    const p = parseQuickInput(raw);
+    if(!p){
+      el.textContent = "日時を認識できませんでした。「日時 内容」の順で、半角スペースで区切って入力してください。";
+      el.className = "preview err";
+    } else {
+      el.textContent = "→ "+jpDateLabel(p.date, p.time)+"　「"+p.content+"」を登録します";
+      el.className = "preview ok";
+    }
+  }
+
+  function addSchedule(){
+    const input = document.getElementById("quickInput");
+    const p = parseQuickInput(input.value);
+    if(!p){
+      updatePreview();
+      return;
+    }
+    const repeatType = document.getElementById("repeatType").value;
+    const untilVal = document.getElementById("repeatUntil").value;
+    const sch = {
+      id: "s"+Date.now()+Math.random().toString(36).slice(2,8),
+      date: p.date,
+      time: p.time,
+      content: p.content,
+      repeatType: repeatType,
+      until: (repeatType!=="none" && untilVal) ? untilVal : null,
+      doneDates: [],
+      doneAt: {},
+      createdAt: Date.now(),
+      exceptions: {}
+    };
+    state.schedules.push(sch);
+    save();
+    input.value = "";
+    document.getElementById("preview").textContent = "";
+    document.getElementById("preview").className = "preview";
+
+    // jump calendar to the month of the new schedule so the user sees it
+    const d = toDateObj(p.date);
+    state.y = d.getUTCFullYear();
+    state.m = d.getUTCMonth();
+    renderAll();
+    showToast(jpDateLabel(p.date, p.time)+" に「"+p.content+"」を登録しました");
+  }
+
+  /* ---------- init / events ---------- */
+  function init(){
+    load();
+
+    document.getElementById("tabCalendarBtn").addEventListener("click", ()=>switchTab("calendar"));
+    document.getElementById("tabListBtn").addEventListener("click", ()=>switchTab("list"));
+
+    document.getElementById("quickInput").addEventListener("input", updatePreview);
+    document.getElementById("quickInput").addEventListener("keydown", e=>{
+      if(e.key==="Enter") addSchedule();
+    });
+    document.getElementById("addBtn").addEventListener("click", addSchedule);
+    document.getElementById("repeatType").addEventListener("change", e=>{
+      document.getElementById("repeatUntilWrap").classList.toggle("show", e.target.value!=="none");
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", ()=>{
+      state.m--; if(state.m<0){ state.m=11; state.y--; }
+      renderCalendar();
+    });
+    document.getElementById("nextBtn").addEventListener("click", ()=>{
+      state.m++; if(state.m>11){ state.m=0; state.y++; }
+      renderCalendar();
+    });
+    document.getElementById("todayBtn").addEventListener("click", ()=>{
+      const t = new Date();
+      state.y = t.getFullYear(); state.m = t.getMonth();
+      renderCalendar();
+    });
+
+    document.getElementById("mFinishBtn").addEventListener("click", ()=>{
+      if(!state.modalCtx) return;
+      toggleOccurrence(state.modalCtx.scheduleId, state.modalCtx.occKey);
+      closeModal();
+    });
+    document.getElementById("mDelBtn").addEventListener("click", ()=>{
+      if(!state.modalCtx) return;
+      const id = state.modalCtx.scheduleId;
+      closeModal();
+      confirmDelete(id);
+    });
+    document.getElementById("mCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalBg").addEventListener("click", e=>{
+      if(e.target.id==="modalBg") closeModal();
+    });
+    document.getElementById("mMoveBtn").addEventListener("click", ()=>{
+      document.getElementById("mMoveForm").style.display = "flex";
+    });
+    document.getElementById("mMoveCancelBtn").addEventListener("click", ()=>{
+      document.getElementById("mMoveForm").style.display = "none";
+    });
+    document.getElementById("mMoveSaveBtn").addEventListener("click", moveOccurrence);
+    document.getElementById("mSkipBtn").addEventListener("click", skipOccurrence);
+
+    renderAll();
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
